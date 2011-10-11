@@ -11,6 +11,7 @@ $(curdir)-$(CONFIG_APPS_SYSLOG) += syslog.c
 $(curdir)-$(CONFIG_APPS_TELNETD) += telnetd.c
 $(curdir)-$(CONFIG_APPS_TIMESYNC) += timesync.c
 $(curdir)-$(CONFIG_APPS_WEBSERVER) += webserver/
+$(curdir)-$(CONFIG_APPS_XAP) += xap.c
 
 $(eval $(call subdir,$(curdir)))
 
