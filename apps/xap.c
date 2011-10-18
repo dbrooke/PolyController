@@ -20,6 +20,7 @@
 
 #include <contiki-net.h>
 #include <init.h>
+#include <stdio.h>
 
 #include "apps/network.h"
 #if CONFIG_APPS_SYSLOG
@@ -47,7 +48,10 @@ PROCESS_THREAD(xap_process, ev, data) {
 
 		if (ev == tcpip_event) {
 			if (running) {
-				//sntp_appcall(ev, data);
+				if (uip_newdata()) {
+					((char *)uip_appdata)[uip_len]='\0';
+					printf("--------------------\n%s\n--------------------\n",(char *)uip_appdata);
+				}
 			}
 		}
 		else if (ev == net_event) {
