@@ -101,6 +101,9 @@ PROCESS_THREAD(dhcp_process, ev, data) {
 }
 
 void dhcpc_configured(const struct dhcpc_state *s) {
+
+	static uip_ipaddr_t bcastaddr;
+
 	// Configure uIP
 	uip_sethostaddr(&s->ipaddr);
 	uip_setnetmask(&s->netmask);
@@ -108,6 +111,9 @@ void dhcpc_configured(const struct dhcpc_state *s) {
 #if CONFIG_APPS_RESOLV
 	resolv_conf(&s->dnsaddr);
 #endif
+	bcastaddr.u16[0] = uip_hostaddr.u16[0] | (uip_netmask.u16[0] ^ 0xffff);
+	bcastaddr.u16[1] = uip_hostaddr.u16[1] | (uip_netmask.u16[1] ^ 0xffff);
+	uip_setbcastaddr(&bcastaddr);
 
 	// Update our internal status
 	dhcp_status.state = s;
@@ -124,6 +130,10 @@ void dhcpc_configured(const struct dhcpc_state *s) {
 		uip_ipaddr_to_quad(&s->netmask),
 		uip_ntohs(s->lease_time[0]) * 65536ul +
 		uip_ntohs(s->lease_time[1]));
+	syslog_P(
+		LOG_DAEMON | LOG_INFO,
+		PSTR("Broadcast addr %d.%d.%d.%d"),
+		uip_ipaddr_to_quad(&bcastaddr));
 	syslog_P(
 		LOG_DAEMON | LOG_INFO,
 		PSTR("Default route %d.%d.%d.%d"),
