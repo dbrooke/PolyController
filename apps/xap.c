@@ -62,6 +62,10 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 
 				etimer_set(&tmr_hbeat, CLOCK_SECOND * 60);
 
+				tcpip_poll_udp(c);
+				PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
+				uip_send(xap_hbeat, sizeof(xap_hbeat));
+
 				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Starting"));
 
@@ -128,8 +132,6 @@ PROCESS_THREAD(xap_rx_process, ev, data) {
 			if (net_status.configured && !rx_running) {
 				rx_running = 1;
 
-				etimer_set(&tmr_hbeat, CLOCK_SECOND * 60);
-
 				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Starting"));
 
@@ -137,8 +139,6 @@ PROCESS_THREAD(xap_rx_process, ev, data) {
 			}
 			else if (!net_status.configured && rx_running) {
 				rx_running = 0;
-
-				etimer_stop(&tmr_hbeat);
 
 				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Stopped"));
