@@ -26,11 +26,14 @@
 #if CONFIG_APPS_SYSLOG
 #include "apps/syslog.h"
 #endif
+#include "drivers/port_ext.h"
+
+#define XAP_BSC_INFO "xap-header\n{\nv=12\nhop=1\nuid=FFBC010%d\nclass=xapbsc.info\nsource=bootc.polycontroller.default:relay%d\n}\noutput.state\n{\nstate=%s\n}\n"
 
 PROCESS(xap_tx_process, "xAP_tx");
 INIT_PROCESS(xap_tx_process);
 
-int tx_running = 0, rx_running = 0;
+int tx_running = 0, rx_running = 0, relay_bit = 0;
 
 static struct etimer tmr_hbeat;
 
@@ -39,6 +42,7 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 	uip_ipaddr_t addr;
 	static struct uip_udp_conn *c;
 	static char xap_hbeat[]="xap-hbeat\n{\nv=12\nhop=1\nuid=FFBC0100\nclass=xap-hbeat.alive\nsource=bootc.polycontroller.default\ninterval=60\n}\n";
+	static char xap_bsc_info[512];
 
 	PROCESS_BEGIN();
 
@@ -87,6 +91,11 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 					tcpip_poll_udp(c);
 					PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 					uip_send(xap_hbeat, sizeof(xap_hbeat));
+					sprintf(xap_bsc_info, XAP_BSC_INFO, relay_bit + 1, relay_bit + 1, port_ext_bit_get(0, relay_bit)?"on":"off");
+					if (++relay_bit > 3) relay_bit = 0;
+					tcpip_poll_udp(c);
+					PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
+					uip_send(xap_bsc_info, sizeof(xap_bsc_info));
 				}
 			}
 		}
@@ -124,7 +133,7 @@ PROCESS_THREAD(xap_rx_process, ev, data) {
 			if (rx_running) {
 				if (uip_newdata()) {
 					((char *)uip_appdata)[uip_len]='\0';
-					printf("--------------------\n%s\n--------------------\n",(char *)uip_appdata);
+					//printf("--------------------\n%s\n--------------------\n",(char *)uip_appdata);
 				}
 			}
 		}
