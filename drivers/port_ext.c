@@ -100,6 +100,14 @@ void port_ext_bit_set(uint8_t port, uint8_t bit) {
 	}
 }
 
+int port_ext_bit_get(uint8_t port, uint8_t bit) {
+	int rv = -1;
+	if ((port < sizeof(virtports)) && (bit < 8)) {
+		rv=(virtports[port] & (1 << bit))?1:0;
+	}
+	return rv;
+}
+
 void port_ext_set(uint8_t port, uint8_t val) {
 	if (port < sizeof(virtports)) {
 		virtports[port] = val;
