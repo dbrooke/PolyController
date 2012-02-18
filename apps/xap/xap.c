@@ -30,11 +30,12 @@
 
 process_event_t xap_send;
 process_event_t xap_recv;
+process_event_t xap_status;
 
 PROCESS(xap_tx_process, "xAP_tx");
 INIT_PROCESS(xap_tx_process);
 
-static int tx_running = 0, rx_running = 0;
+static int tx_running = 0, rx_running = 0, xap_running = 0;
 
 static struct etimer tmr_hbeat;
 
@@ -48,6 +49,7 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 	PROCESS_BEGIN();
 
 	xap_send = process_alloc_event();
+	xap_status = process_alloc_event();
 
 	uip_ipaddr(&addr, 255,255,255,255);
 	c = udp_new(&addr, UIP_HTONS(3639), NULL);
@@ -73,7 +75,8 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 				PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 				uip_send(xap_hbeat, sizeof(xap_hbeat));
 
-				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
+				xap_running = tx_running && rx_running;
+				process_post(PROCESS_BROADCAST, xap_status, &xap_running);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Starting"));
 
 				process_poll(&xap_tx_process);
@@ -83,7 +86,8 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 
 				etimer_stop(&tmr_hbeat);
 
-				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
+				xap_running = tx_running && rx_running;
+				process_post(PROCESS_BROADCAST, xap_status, &xap_running);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Stopped"));
 			}
 		}
@@ -150,7 +154,8 @@ PROCESS_THREAD(xap_rx_process, ev, data) {
 			if (net_status.configured && !rx_running) {
 				rx_running = 1;
 
-				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
+				xap_running = tx_running && rx_running;
+				process_post(PROCESS_BROADCAST, xap_status, &xap_running);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Starting"));
 
 				process_poll(&xap_rx_process);
@@ -158,7 +163,8 @@ PROCESS_THREAD(xap_rx_process, ev, data) {
 			else if (!net_status.configured && rx_running) {
 				rx_running = 0;
 
-				//process_post(PROCESS_BROADCAST, xap_event, &xap_status);
+				xap_running = tx_running && rx_running;
+				process_post(PROCESS_BROADCAST, xap_status, &xap_running);
 				syslog_P(LOG_DAEMON | LOG_INFO, PSTR("Stopped"));
 			}
 		}

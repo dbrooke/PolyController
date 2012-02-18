@@ -25,6 +25,9 @@
 #include "drivers/port_ext.h"
 #include "shell.h"
 
+extern struct process xap_rly_process;
+extern process_event_t rly_update;
+
 PROCESS(shell_rlytest_process, "rlytest");
 SHELL_COMMAND(rlytest_command,
 	"rlytest", "rlytest <1234>: test external relay board(s)",
@@ -59,6 +62,7 @@ PROCESS_THREAD(shell_rlytest_process, ev, data) {
 	}
 
 	port_ext_update();
+	process_post(&xap_rly_process, rly_update, NULL);
 
 	PROCESS_END();
 }
