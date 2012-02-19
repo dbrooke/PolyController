@@ -25,8 +25,10 @@
 #include "drivers/port_ext.h"
 #include "shell.h"
 
+#if CONFIG_APPS_XAP
 extern struct process xap_rly_process;
 extern process_event_t rly_update;
+#endif
 
 PROCESS(shell_rlytest_process, "rlytest");
 SHELL_COMMAND(rlytest_command,
@@ -62,7 +64,9 @@ PROCESS_THREAD(shell_rlytest_process, ev, data) {
 	}
 
 	port_ext_update();
+#if CONFIG_APPS_XAP
 	process_post(&xap_rly_process, rly_update, NULL);
+#endif
 
 	PROCESS_END();
 }
