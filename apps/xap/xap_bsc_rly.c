@@ -22,6 +22,8 @@
 #include <init.h>
 #include <stdio.h>
 
+#include "xap.h"
+
 #if CONFIG_APPS_SYSLOG
 #include "apps/syslog.h"
 #endif
@@ -47,6 +49,8 @@ static struct etimer tmr_xap_info;
 PROCESS_THREAD(xap_rly_process, ev, data) {
 
 	static char xap_bsc_msg[512];
+	static xaphead xap_header;
+	static char *xap_body;
 
 	PROCESS_BEGIN();
 
@@ -56,7 +60,11 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 		PROCESS_WAIT_EVENT();
 
 		if (ev == xap_recv) {
-			//printf("--------------------\n%s\n--------------------\n",(char *)data);
+			xap_body = xapReadHead(data, &xap_header);
+			if (xap_body != NULL) {
+				printf("xap message:\nversion %d\nhop count %d\nuid %s\nclass %s\nsource %s\ntarget %s\ninterval %d\n---\n%s\n",
+						xap_header.v,xap_header.hop,xap_header.uid,xap_header.class,xap_header.source,xap_header.target,xap_header.interval,xap_body);
+			}
 		}
 		else if (ev == xap_status) {
 			if (*(int*)(data) == 1) {
