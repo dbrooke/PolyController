@@ -354,7 +354,6 @@ short int xapEvalTarget(char *strTarget, char *strVendor, char *strDevice, char 
 //
 //	Inspects the xAP BSC message body pointed by pBody
 //
-//	'fdSocket'		UDP socket
 //	'pBody'			Pointer to the beginning of the body section within the
 //				xAP message. This pointer should be recovered from a
 //				previous call to 'xapReadBscBody' or 'xapReadHead'
@@ -367,7 +366,7 @@ short int xapEvalTarget(char *strTarget, char *strVendor, char *strDevice, char 
 //
 //*************************************************************************
 
-char *xapReadBscBody(int fdSocket, char *pBody, xaphead header, xAPendp *endp)
+char *xapReadBscBody(char *pBody, xaphead header, xAPendp *endp)
 {
 	char *pStr1, *pStr2;			// Pointers to strings
 	static char strKey[SIZEXAPKEY];		// Keyword string

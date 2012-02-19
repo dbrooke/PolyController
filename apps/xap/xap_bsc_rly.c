@@ -21,6 +21,7 @@
 #include <contiki-net.h>
 #include <init.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "xap.h"
 
@@ -51,6 +52,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 	static char xap_bsc_msg[512];
 	static xaphead xap_header;
 	static char *xap_body;
+	static xAPendp xap_endpoint;
 
 	PROCESS_BEGIN();
 
@@ -61,9 +63,10 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 
 		if (ev == xap_recv) {
 			xap_body = xapReadHead(data, &xap_header);
-			if (xap_body != NULL) {
-				printf("xap message:\nversion %d\nhop count %d\nuid %s\nclass %s\nsource %s\ntarget %s\ninterval %d\n---\n%s\n",
-						xap_header.v,xap_header.hop,xap_header.uid,xap_header.class,xap_header.source,xap_header.target,xap_header.interval,xap_body);
+			if ((xap_body != NULL) && (!strcasecmp(xap_header.class, "xAPBSC.cmd")) && xapEvalTarget(xap_header.target, "bootc", "polycontroller", "default", &xap_endpoint)) {
+				while ((xap_body = xapReadBscBody(xap_body, xap_header, &xap_endpoint)) != NULL) {
+					printf("relay %d %s\n",xap_endpoint.UIDsub, xap_endpoint.state);
+				}
 			}
 		}
 		else if (ev == xap_status) {

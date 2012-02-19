@@ -76,4 +76,5 @@ typedef struct {
 
 char * xapReadHead(char *msg, xaphead *header);
 short int xapEvalTarget(char *strTarget, char *strVendor, char *strDevice, char *strInstance, xAPendp *endp);
-char *xapReadBscBody(int fdSocket, char *pBody, xaphead header, xAPendp *endp);
+char *xapReadBscBody(char *pBody, xaphead header, xAPendp *endp);
+
