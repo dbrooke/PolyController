@@ -56,10 +56,10 @@ PROCESS_THREAD(shell_rlytest_process, ev, data) {
 
 	for (int i = 0; i < 4; i++) {
 		if (args[i] == '1') {
-			port_ext_bit_set(0, i);
+			port_ext_bit_set(0, 3 - i);
 		}
 		else if (args[i] == '0') {
-			port_ext_bit_clear(0, i);
+			port_ext_bit_clear(0, 3 - i);
 		}
 	}
 

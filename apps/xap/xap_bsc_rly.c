@@ -69,13 +69,13 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 				while ((xap_body = xapReadBscBody(xap_body, xap_header, &xap_endpoint)) != NULL) {
 					if (xap_endpoint.UIDsub > 0 && xap_endpoint.UIDsub < 5) {
 						if (!strcasecmp(xap_endpoint.state,"on")) {
-							port_ext_bit_set(0, xap_endpoint.UIDsub - 1);
+							port_ext_bit_set(0, 4 - xap_endpoint.UIDsub);
 						}
 						else if (!strcasecmp(xap_endpoint.state,"off")) {
-							port_ext_bit_clear(0, xap_endpoint.UIDsub - 1);
+							port_ext_bit_clear(0, 4 - xap_endpoint.UIDsub);
 						}
 						// if relay state changed then send xapbsc.event else send xapbsc.info
-						if ((state = port_ext_bit_get(0, xap_endpoint.UIDsub - 1)) != relay_state[xap_endpoint.UIDsub - 1]) {
+						if ((state = port_ext_bit_get(0, 4 - xap_endpoint.UIDsub)) != relay_state[xap_endpoint.UIDsub - 1]) {
 							relay_state[xap_endpoint.UIDsub - 1] = state;
 							sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "event", xap_endpoint.UIDsub, state?"on":"off");
 						}
@@ -96,7 +96,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 				etimer_set(&tmr_xap_info, CLOCK_SECOND * 15);
 				// send initial xapbsc.info messages and initialise relay state array
 				for (relay_bit = 0; relay_bit < 4; relay_bit++) {
-					relay_state[relay_bit] = state = port_ext_bit_get(0, relay_bit);
+					relay_state[relay_bit] = state = port_ext_bit_get(0, 3 - relay_bit);
 					sprintf(xap_bsc_msg, XAP_BSC_MSG, relay_bit + 1, "info", relay_bit + 1, state?"on":"off");
 					process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 					// pause to let xap_tx_process send the message
@@ -111,7 +111,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 		else if (ev == rly_update) {
 			for (i = 0; i < 4; i++) {
 				// if changed send xapbsc.event
-				if ((state = port_ext_bit_get(0, i)) != relay_state[i]) {
+				if ((state = port_ext_bit_get(0, 3 - i)) != relay_state[i]) {
 					relay_state[i] = state;
 					sprintf(xap_bsc_msg, XAP_BSC_MSG, i + 1, "event", i + 1, state?"on":"off");
 					process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
@@ -124,7 +124,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 			if (data == &tmr_xap_info && etimer_expired(&tmr_xap_info)) {
 				etimer_reset(&tmr_xap_info);
 				if (++relay_bit > 3) relay_bit = 0;
-				relay_state[relay_bit] = state = port_ext_bit_get(0, relay_bit);
+				relay_state[relay_bit] = state = port_ext_bit_get(0, 3 - relay_bit);
 				sprintf(xap_bsc_msg, XAP_BSC_MSG, relay_bit + 1, "info", relay_bit + 1, state?"on":"off");
 				process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 			}
