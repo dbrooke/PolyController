@@ -43,7 +43,7 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 
 	uip_ipaddr_t addr;
 	static struct uip_udp_conn *c;
-	static char xap_hbeat[]="xap-hbeat\n{\nv=12\nhop=1\nuid=FFBC0100\nclass=xap-hbeat.alive\nsource=bootc.polycontroller.default\ninterval=60\n}\n";
+	static char xap_hbeat[]="xap-hbeat\n{\nv=12\nhop=1\nuid=FFBC0100\nclass=xap-hbeat.alive\nsource=bootc.polyctrl.default\ninterval=60\n}\n";
 	static char xap_send_msg[512];
 
 	PROCESS_BEGIN();

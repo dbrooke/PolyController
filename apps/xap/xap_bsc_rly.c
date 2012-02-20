@@ -30,7 +30,7 @@
 #endif
 #include "drivers/port_ext.h"
 
-#define XAP_BSC_MSG "xap-header\n{\nv=12\nhop=1\nuid=FFBC010%d\nclass=xapbsc.%s\nsource=bootc.polycontroller.default:relay%d\n}\noutput.state\n{\nstate=%s\n}\n"
+#define XAP_BSC_MSG "xap-header\n{\nv=12\nhop=1\nuid=FFBC010%d\nclass=xapbsc.%s\nsource=bootc.polyctrl.default:relay.%d\n}\noutput.state\n{\nstate=%s\n}\n"
 
 extern struct process xap_tx_process;
 extern process_event_t xap_send;
@@ -44,6 +44,7 @@ INIT_PROCESS(xap_rly_process);
 
 static int i, relay_bit = 3;
 static int state, relay_state[4]={-1,-1,-1,-1};
+static const char *name[4]={"1","2","3","4"};
 
 static struct etimer tmr_xap_info;
 
@@ -65,26 +66,39 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 		if (ev == xap_recv) {
 			strncpy(xap_rcv_msg, data, sizeof(xap_rcv_msg));
 			xap_body = xapReadHead(xap_rcv_msg, &xap_header);
-			if ((xap_body != NULL) && (!strcasecmp(xap_header.class, "xAPBSC.cmd")) && xapEvalTarget(xap_header.target, "bootc", "polycontroller", "default", &xap_endpoint)) {
-				while ((xap_body = xapReadBscBody(xap_body, xap_header, &xap_endpoint)) != NULL) {
-					if (xap_endpoint.UIDsub > 0 && xap_endpoint.UIDsub < 5) {
-						if (!strcasecmp(xap_endpoint.state,"on")) {
-							port_ext_bit_set(0, 4 - xap_endpoint.UIDsub);
+			if ((xap_body != NULL) && xapEvalTarget(xap_header.target, "bootc", "polyctrl", "default", &xap_endpoint)) {
+				if (!strcasecmp(xap_header.class, "xAPBSC.query") && (!strcmp(xap_endpoint.location,"relay") || !strcmp(xap_endpoint.location,"*"))) {
+					for (i = 0; i < 4; i++) {
+						if (!strcmp(xap_endpoint.name,"*") || !strcmp(xap_endpoint.name,name[i])) {
+							relay_state[i] = state = port_ext_bit_get(0, 3 - i);
+							sprintf(xap_bsc_msg, XAP_BSC_MSG, i + 1, "info", i + 1, state?"on":"off");
+							process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
+							// pause to let xap_tx_process send the message
+							PROCESS_PAUSE();
 						}
-						else if (!strcasecmp(xap_endpoint.state,"off")) {
-							port_ext_bit_clear(0, 4 - xap_endpoint.UIDsub);
+					}
+				}
+				else if (!strcasecmp(xap_header.class, "xAPBSC.cmd")) {
+					while ((xap_body = xapReadBscBody(xap_body, xap_header, &xap_endpoint)) != NULL) {
+						if (xap_endpoint.UIDsub > 0 && xap_endpoint.UIDsub < 5) {
+							if (!strcasecmp(xap_endpoint.state,"on")) {
+								port_ext_bit_set(0, 4 - xap_endpoint.UIDsub);
+							}
+							else if (!strcasecmp(xap_endpoint.state,"off")) {
+								port_ext_bit_clear(0, 4 - xap_endpoint.UIDsub);
+							}
+							// if relay state changed then send xapbsc.event else send xapbsc.info
+							if ((state = port_ext_bit_get(0, 4 - xap_endpoint.UIDsub)) != relay_state[xap_endpoint.UIDsub - 1]) {
+								relay_state[xap_endpoint.UIDsub - 1] = state;
+								sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "event", xap_endpoint.UIDsub, state?"on":"off");
+							}
+							else {
+								sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "info", xap_endpoint.UIDsub, state?"on":"off");
+							}
+							process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
+							// pause to let xap_tx_process send the message
+							PROCESS_PAUSE();
 						}
-						// if relay state changed then send xapbsc.event else send xapbsc.info
-						if ((state = port_ext_bit_get(0, 4 - xap_endpoint.UIDsub)) != relay_state[xap_endpoint.UIDsub - 1]) {
-							relay_state[xap_endpoint.UIDsub - 1] = state;
-							sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "event", xap_endpoint.UIDsub, state?"on":"off");
-						}
-						else {
-							sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "info", xap_endpoint.UIDsub, state?"on":"off");
-						}
-						process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
-						// pause to let xap_tx_process send the message
-						PROCESS_PAUSE();
 					}
 				}
 				port_ext_update();
