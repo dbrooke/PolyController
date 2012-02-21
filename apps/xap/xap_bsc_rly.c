@@ -30,7 +30,7 @@
 #endif
 #include "drivers/port_ext.h"
 
-#define XAP_BSC_MSG "xap-header\n{\nv=12\nhop=1\nuid=FFBC010%d\nclass=xapbsc.%s\nsource=bootc.polyctrl.default:relay.%d\n}\noutput.state\n{\nstate=%s\n}\n"
+#define XAP_BSC_MSG "xap-header\n{\nv=12\nhop=1\nuid=FFBC01%02X\nclass=xapbsc.%s\nsource=bootc.polyctrl.default:relay.%s\n}\noutput.state\n{\nstate=%s\n}\n"
 
 extern struct process xap_tx_process;
 extern process_event_t xap_send;
@@ -71,7 +71,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 					for (i = 0; i < 4; i++) {
 						if (!strcmp(xap_endpoint.name,"*") || !strcmp(xap_endpoint.name,name[i])) {
 							relay_state[i] = state = port_ext_bit_get(0, 3 - i);
-							sprintf(xap_bsc_msg, XAP_BSC_MSG, i + 1, "info", i + 1, state?"on":"off");
+							sprintf(xap_bsc_msg, XAP_BSC_MSG, i + 1, "info", name[i], state?"on":"off");
 							process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 							// pause to let xap_tx_process send the message
 							PROCESS_PAUSE();
@@ -90,10 +90,10 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 							// if relay state changed then send xapbsc.event else send xapbsc.info
 							if ((state = port_ext_bit_get(0, 4 - xap_endpoint.UIDsub)) != relay_state[xap_endpoint.UIDsub - 1]) {
 								relay_state[xap_endpoint.UIDsub - 1] = state;
-								sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "event", xap_endpoint.UIDsub, state?"on":"off");
+								sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "event", name[xap_endpoint.UIDsub - 1], state?"on":"off");
 							}
 							else {
-								sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "info", xap_endpoint.UIDsub, state?"on":"off");
+								sprintf(xap_bsc_msg, XAP_BSC_MSG, xap_endpoint.UIDsub , "info", name[xap_endpoint.UIDsub - 1], state?"on":"off");
 							}
 							process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 							// pause to let xap_tx_process send the message
@@ -111,7 +111,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 				// send initial xapbsc.info messages and initialise relay state array
 				for (relay_bit = 0; relay_bit < 4; relay_bit++) {
 					relay_state[relay_bit] = state = port_ext_bit_get(0, 3 - relay_bit);
-					sprintf(xap_bsc_msg, XAP_BSC_MSG, relay_bit + 1, "info", relay_bit + 1, state?"on":"off");
+					sprintf(xap_bsc_msg, XAP_BSC_MSG, relay_bit + 1, "info", name[relay_bit], state?"on":"off");
 					process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 					// pause to let xap_tx_process send the message
 					PROCESS_PAUSE();
@@ -127,7 +127,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 				// if changed send xapbsc.event
 				if ((state = port_ext_bit_get(0, 3 - i)) != relay_state[i]) {
 					relay_state[i] = state;
-					sprintf(xap_bsc_msg, XAP_BSC_MSG, i + 1, "event", i + 1, state?"on":"off");
+					sprintf(xap_bsc_msg, XAP_BSC_MSG, i + 1, "event", name[i], state?"on":"off");
 					process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 					// pause to let xap_tx_process send the message
 					PROCESS_PAUSE();
@@ -139,7 +139,7 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 				etimer_reset(&tmr_xap_info);
 				if (++relay_bit > 3) relay_bit = 0;
 				relay_state[relay_bit] = state = port_ext_bit_get(0, 3 - relay_bit);
-				sprintf(xap_bsc_msg, XAP_BSC_MSG, relay_bit + 1, "info", relay_bit + 1, state?"on":"off");
+				sprintf(xap_bsc_msg, XAP_BSC_MSG, relay_bit + 1, "info", name[relay_bit], state?"on":"off");
 				process_post(&xap_tx_process, xap_send, &xap_bsc_msg);
 			}
 		}

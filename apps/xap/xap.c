@@ -147,6 +147,7 @@ PROCESS_THREAD(xap_rx_process, ev, data) {
 				if (uip_newdata()) {
 					((char *)uip_appdata)[uip_len]='\0';
 					process_post(PROCESS_BROADCAST, xap_recv, uip_appdata);
+					PROCESS_PAUSE();
 				}
 			}
 		}
