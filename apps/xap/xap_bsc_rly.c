@@ -87,6 +87,14 @@ PROCESS_THREAD(xap_rly_process, ev, data) {
 							else if (!strcasecmp(xap_endpoint.state,"off")) {
 								port_ext_bit_clear(0, 4 - xap_endpoint.UIDsub);
 							}
+							else if (!strcasecmp(xap_endpoint.state,"toggle")) {
+								if (port_ext_bit_get(0, 4 - xap_endpoint.UIDsub) == 0) {
+									port_ext_bit_set(0, 4 - xap_endpoint.UIDsub);
+								}
+								else {
+									port_ext_bit_clear(0, 4 - xap_endpoint.UIDsub);
+								}
+							}
 							// if relay state changed then send xapbsc.event else send xapbsc.info
 							if ((state = port_ext_bit_get(0, 4 - xap_endpoint.UIDsub)) != relay_state[xap_endpoint.UIDsub - 1]) {
 								relay_state[xap_endpoint.UIDsub - 1] = state;
