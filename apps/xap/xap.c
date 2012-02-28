@@ -73,7 +73,7 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 
 				tcpip_poll_udp(c);
 				PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
-				uip_send(xap_hbeat, sizeof(xap_hbeat));
+				uip_send(xap_hbeat, strlen(xap_hbeat));
 
 				xap_running = tx_running && rx_running;
 				process_post(PROCESS_BROADCAST, xap_status, &xap_running);
@@ -97,7 +97,7 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 				strncpy(xap_send_msg, data, sizeof(xap_send_msg));
 				tcpip_poll_udp(c);
 				PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
-				uip_send(xap_send_msg, sizeof(xap_send_msg));
+				uip_send(xap_send_msg, strlen(xap_send_msg));
 			}
 		}
 		else if (ev == PROCESS_EVENT_TIMER) {
@@ -106,7 +106,7 @@ PROCESS_THREAD(xap_tx_process, ev, data) {
 				if (tx_running) {
 					tcpip_poll_udp(c);
 					PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
-					uip_send(xap_hbeat, sizeof(xap_hbeat));
+					uip_send(xap_hbeat, strlen(xap_hbeat));
 				}
 			}
 		}
