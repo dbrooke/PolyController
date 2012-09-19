@@ -10,3 +10,4 @@
 build
 tools/polyfs/mkpolyfs
 tools/polyfs/polyfsck
+cscope.out
